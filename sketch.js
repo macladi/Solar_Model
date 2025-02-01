@@ -111,7 +111,6 @@ function draw() {
   smooth();
 }
 
-
 // Funcion para generar los planetas
 const createPlanet = (sizeX, sizeY, img, angle, translateX, translateY, followOrbit) => {
   if (followOrbit){
@@ -132,7 +131,7 @@ const createPlanet = (sizeX, sizeY, img, angle, translateX, translateY, followOr
 function mouseDragged() {
   const sensitivity = 0.001; // Sensibilidad del arrastre
   camRotY = (mouseX - pmouseX) * sensitivity;
-  //camRotX = (mouseY - pmouseY) * sensitivity;
+  camRotX = (mouseY - pmouseY) * sensitivity;
   dragging = true;
 }
 
