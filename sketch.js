@@ -14,6 +14,8 @@ const earthSize = 60;  // Tamaño de la Tierra
 const moonSize = earthSize * 0.27; // Tamaño de la Luna (27% del tamaño de la Tierra)
 const moonDistance = earthSize * 4; // Distancia entre Tierra y Luna (40 radios terrestres)
 
+
+
 // Variables camara
 let cam;
 let camX = 0,
@@ -50,6 +52,7 @@ function setup() {
   createCanvas(windowWidth, windowHeight, WEBGL);
   cam = createCamera();
   mistery.hide();
+  
  
 }
 
@@ -70,7 +73,6 @@ function draw() {
     cam.tilt(camRotX); // Rotación vertical
   }
 
-  //* Crear como constantes o ir declarandolas a medida que se vayan necesitando
   // Actualizar ángulos de rotación de los planetas
   angle_sun += 0.01; // Rotación del Sol
   angle_mercury += 0.1; // Rotación de Mercurio
@@ -124,7 +126,8 @@ function draw() {
   createPlanet(65, 65, neptune, angle_neptune, 2000, 0, true);
 
   smooth();
-}
+
+ }
 
 // Funcion para generar los planetas
 const createPlanet = (sizeX, sizeY, img, angle, translateX, translateY, followOrbit) => {
