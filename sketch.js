@@ -10,9 +10,9 @@ let angle_saturn = 0;
 let angle_uranus = 0;
 let angle_neptune = 0;
 
-const earthSize = 100;  // Tamaño de la Tierra
+const earthSize = 60;  // Tamaño de la Tierra
 const moonSize = earthSize * 0.27; // Tamaño de la Luna (27% del tamaño de la Tierra)
-const moonDistance = earthSize * 40; // Distancia entre Tierra y Luna (40 radios terrestres)
+const moonDistance = earthSize * 4; // Distancia entre Tierra y Luna (40 radios terrestres)
 
 // Variables camara
 let cam;
@@ -98,9 +98,24 @@ function draw() {
   createPlanet(15, 15, mercury, angle_mercury, 300, 0, true);
   createPlanet(25, 25, venus, angle_venus, 450, 0, true);
   createPlanet(27, 25, venus_atm, angle_venus, 450, 0, true);
-  createPlanet(30, 30, earth, angle_earth, 600, 0, true);
-  createPlanet(31, 30, earth_clouds, angle_earth, 600, 0, false);
-  createPlanet(17, 17, moon, angle_moon, 600, 0, true);
+
+  push();
+  rotateY(radians(angle_earth));
+  translate(600, 0, 0);
+  texture(earth);
+  sphere(earthSize);  
+  texture(earth_clouds);
+  sphere(earthSize * 1.03);
+
+  // Luna orbitando la Tierra
+  push();
+  rotateY(radians(angle_moon));
+  translate(moonDistance, 0, 0);
+  texture(moon);
+  sphere(moonSize);
+  pop();
+
+  pop();
   createPlanet(20, 20, mars, angle_mars, 750, 0, true);
   createPlanet(100, 100, jupiter, angle_jupiter, 1100, 0, true);
   createPlanet(85, 85, saturn, angle_saturn, 1400, 0, true);
