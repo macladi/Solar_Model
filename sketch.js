@@ -10,6 +10,18 @@ let angle_saturn = 0;
 let angle_uranus = 0;
 let angle_neptune = 0;
 
+// Variables para las rotaciones AXIALES (sobre su eje)
+let rotation_sun = 0;
+let rotation_mercury = 0;
+let rotation_venus = 0;
+let rotation_earth = 0;
+let rotation_moon = 0;
+let rotation_mars = 0;
+let rotation_jupiter = 0;
+let rotation_saturn = 0;
+let rotation_uranus = 0;
+let rotation_neptune = 0;
+
 const earthSize = 60;  // Tamaño de la Tierra
 const moonSize = earthSize * 0.27; // Tamaño de la Luna (27% del tamaño de la Tierra)
 const moonDistance = earthSize * 4; // Distancia entre Tierra y Luna (40 radios terrestres)
@@ -85,6 +97,17 @@ function draw() {
   angle_uranus += 0.007; // Rotación de Urano
   angle_neptune += 0.005; // Rotación de Neptuno
 
+
+  rotation_sun += 0.02;      // Sol: 27 días terrestres por rotación
+  rotation_mercury += 0.015; // Mercurio: 58 días
+  rotation_venus -= 0.01;    // Venus: -243 días (rotación retrógrada)
+  rotation_earth += 0.05;    // Tierra: 1 día
+  rotation_moon += 0.002;    // Luna: 27 días (rotación sincrónica)
+  rotation_mars += 0.03;     // Marte: 1.02 días
+  rotation_jupiter += 0.1;   // Júpiter: 9.9 horas
+  rotation_saturn += 0.08;   // Saturno: 10.7 horas
+  rotation_uranus += 0.04;   // Urano: -17h (eje inclinado)
+  rotation_neptune += 0.03;  // Neptuno: 16h
   
   //Luces
   background(0, 0, 0, 0);
@@ -95,55 +118,115 @@ function draw() {
   noStroke();  
 
 
-  // Creación planetas
-  createPlanet(150, 150, sun_img, angle_sun, 0, 0, true);
-  createPlanet(15, 15, mercury, angle_mercury, 300, 0, true);
-  createPlanet(25, 25, venus, angle_venus, 450, 0, true);
-  createPlanet(27, 25, venus_atm, angle_venus, 450, 0, true);
+  createPlanet(150, 150, sun_img, 0, 0, 0, false, rotation_sun); // Sol
 
-  push();
-  rotateY(radians(angle_earth));
+
+   push();
+   rotateY(radians(angle_mercury));
+   translate(300, 0, 0);
+   rotateY(radians(rotation_mercury));
+   texture(mercury);
+   sphere(15);
+   pop();
+
+   push();
+   rotateY(radians(angle_venus));
+   translate(450, 0, 0);
+   push();
+   rotateY(radians(rotation_venus));
+   texture(venus);
+   sphere(25);
+   texture(venus_atm);
+   sphere(27);
+   pop();
+   pop();
+
+   push();
+  rotateY(radians(angle_earth)); // Órbita terrestre
   translate(600, 0, 0);
+  
+  // Tierra
+  push();
+  rotateY(radians(rotation_earth));
   texture(earth);
-  sphere(earthSize);  
+  sphere(earthSize);
   texture(earth_clouds);
   sphere(earthSize * 1.03);
-
-  // Luna orbitando la Tierra
+  pop();
+  
+  // Luna
   push();
-  rotateY(radians(angle_moon));
+  rotateY(radians(angle_moon)); // Órbita lunar
   translate(moonDistance, 0, 0);
+  rotateY(radians(rotation_moon));
   texture(moon);
   sphere(moonSize);
   pop();
-
+  
   pop();
-  createPlanet(20, 20, mars, angle_mars, 750, 0, true);
-  createPlanet(100, 100, jupiter, angle_jupiter, 1100, 0, true);
-  createPlanet(85, 85, saturn, angle_saturn, 1400, 0, true);
-  createPlanet(89, 89, saturn_ring, angle_saturn, 1400, 0, true);
-  createPlanet(70, 70, uranus, angle_uranus, 1700, 0, true);
-  createPlanet(65, 65, neptune, angle_neptune, 2000, 0, true);
+
+
+  push();
+  rotateY(radians(angle_mars));
+  translate(950, 0, 0);
+  rotateY(radians(rotation_mars));
+  texture(mars);
+  sphere(20);
+  pop();
+
+  push();
+  rotateY(radians(angle_jupiter));
+  translate(1300, 0, 0);
+  rotateY(radians(rotation_jupiter));
+  texture(jupiter);
+  sphere(100);
+  pop();
+
+  push();
+  rotateY(radians(angle_saturn));
+  translate(1800, 0, 0);
+  rotateY(radians(rotation_saturn));
+  texture(saturn);
+  sphere(85);
+  // Anillos
+  push();
+  rotateX(PI/2); // Orientar anillos
+  texture(saturn_ring);
+  torus(89, 15); 
+  pop();
+  pop();
+
+
+  push();
+  rotateY(radians(angle_uranus));
+  translate(2200, 0, 0);
+  rotateY(radians(rotation_uranus));
+  texture(uranus);
+  sphere(70);
+  pop();
+
+  push();
+  rotateY(radians(angle_neptune));
+  translate(2600, 0, 0);
+  rotateY(radians(rotation_neptune));
+  texture(neptune);
+  sphere(65);
+  pop();
 
   smooth();
 
  }
 
 // Funcion para generar los planetas
-const createPlanet = (sizeX, sizeY, img, angle, translateX, translateY, followOrbit) => {
-  if (followOrbit){
-    push();    
-  } 
-  rotateY(radians(angle));
+const createPlanet = (sizeX, sizeY, img, orbitalAngle, translateX, translateY, followOrbit, rotationAngle) => {
+  if (followOrbit) push();
+  rotateY(radians(orbitalAngle));
   translate(translateX, translateY);
+  rotateY(radians(rotationAngle));  // Nueva línea para rotación axial
   texture(img);
   sphere(sizeX, sizeY);
-  if (followOrbit){
-    pop();
-  }
-  console.log("yessss");
+  if (followOrbit) pop();
 };
- 
 
 // Cambia la rotación de la cámara al arrastrar el ratón
 function mouseDragged() {
