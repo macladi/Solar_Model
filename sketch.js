@@ -22,10 +22,15 @@ let rotation_saturn = 0;
 let rotation_uranus = 0;
 let rotation_neptune = 0;
 
+let cameraMode = "sun";
+let speedMultiplier = 1;
+
 const earthSize = 60;  // Tamaño de la Tierra
 const moonSize = earthSize * 0.27; // Tamaño de la Luna (27% del tamaño de la Tierra)
 const moonDistance = earthSize * 4; // Distancia entre Tierra y Luna (40 radios terrestres)
 
+let defaultCamPosition = { x: 0, y: 0, z: 1000 };
+let earthCamPosition = { x: 600, y: 0, z: 1000 };
 
 
 // Variables camara
@@ -64,12 +69,19 @@ function setup() {
   createCanvas(windowWidth, windowHeight, WEBGL);
   cam = createCamera();
   mistery.hide();
-  
- 
+
+   // Establecemos la posición por defecto de la cámara (centrada en el Sol)
+   cam.setPosition(defaultCamPosition.x, defaultCamPosition.y, defaultCamPosition.z);
+
+  // Agregar event listeners a los botones o checkboxes para reposicionar la cámara
+  document.getElementById('sun_check').addEventListener('change', repositionCamera);
+  document.getElementById('earth_check').addEventListener('change', repositionCamera);
+
 }
 
 function draw() {
   const speed = 15;
+
 
   if (keyIsDown(87)) cam.move(0, 0, -speed); // W
   if (keyIsDown(83)) cam.move(0, 0, speed); // S
@@ -86,16 +98,16 @@ function draw() {
   }
 
   // Actualizar ángulos de rotación de los planetas
-  angle_sun += 0.01; // Rotación del Sol
-  angle_mercury += 0.1; // Rotación de Mercurio
-  angle_venus += 0.08; // Rotación de Venus
-  angle_earth += 0.05; // Rotación de la Tierra
-  angle_moon += 0.09; // Rotación de la Tierra
-  angle_mars += 0.03; // Rotación de Marte
-  angle_jupiter += 0.02; // Rotación de Júpiter
-  angle_saturn += 0.01; // Rotación de Saturno
-  angle_uranus += 0.007; // Rotación de Urano
-  angle_neptune += 0.005; // Rotación de Neptuno
+  angle_sun += 0.01 * speedMultiplier;
+  angle_mercury += 0.1 * speedMultiplier;
+  angle_venus += 0.08 * speedMultiplier;
+  angle_earth += 0.05 * speedMultiplier;
+  angle_moon += 0.09 * speedMultiplier;
+  angle_mars += 0.03 * speedMultiplier;
+  angle_jupiter += 0.02 * speedMultiplier;
+  angle_saturn += 0.01 * speedMultiplier;
+  angle_uranus += 0.007 * speedMultiplier;
+  angle_neptune += 0.005 * speedMultiplier;
 
 
   rotation_sun += 0.02;      // Sol: 27 días terrestres por rotación
@@ -114,38 +126,47 @@ function draw() {
   lights()
   pointLight(255, 255, 255, 0, 0, 0);
   pointLight(160, 160, 160, -1000, -1000, 500);
+  noStroke();
 
-  noStroke();  
+
+  push();
+  rotateY(-frameCount * 0.001); // Opcional: rotación suave de las órbitas
+  drawOrbit(300);    // Mercurio
+  drawOrbit(550);    // Venus
+  drawOrbit(900);    // Tierra
+  drawOrbit(1350);    // Marte
+  drawOrbit(1750);   // Júpiter
+  drawOrbit(2300);   // Saturno
+  drawOrbit(2900);   // Urano
+  drawOrbit(3300);   // Neptuno
+  pop();
 
 
   createPlanet(150, 150, sun_img, 0, 0, 0, false, rotation_sun); // Sol
 
+  push();
+  rotateY(radians(angle_mercury));
+  translate(300, 0, 0);
+  rotateY(radians(rotation_mercury));
+  texture(mercury);
+  sphere(15);
+  pop();
 
-   push();
-   rotateY(radians(angle_mercury));
-   translate(300, 0, 0);
-   rotateY(radians(rotation_mercury));
-   texture(mercury);
-   sphere(15);
-   pop();
+  push();
+  rotateY(radians(angle_venus));
+  translate(550, 0, 0);
+  push();
+  rotateY(radians(rotation_venus));
+  texture(venus);
+  sphere(25);
+  texture(venus_atm);
+  sphere(27);
+  pop();
+  pop();
 
-   push();
-   rotateY(radians(angle_venus));
-   translate(450, 0, 0);
-   push();
-   rotateY(radians(rotation_venus));
-   texture(venus);
-   sphere(25);
-   texture(venus_atm);
-   sphere(27);
-   pop();
-   pop();
-
-   push();
+  push();
   rotateY(radians(angle_earth)); // Órbita terrestre
-  translate(600, 0, 0);
-  
-  // Tierra
+  translate(900, 0, 0);
   push();
   rotateY(radians(rotation_earth));
   texture(earth);
@@ -168,7 +189,7 @@ function draw() {
 
   push();
   rotateY(radians(angle_mars));
-  translate(950, 0, 0);
+  translate(1350, 0, 0);
   rotateY(radians(rotation_mars));
   texture(mars);
   sphere(20);
@@ -176,7 +197,7 @@ function draw() {
 
   push();
   rotateY(radians(angle_jupiter));
-  translate(1300, 0, 0);
+  translate(1750, 0, 0);
   rotateY(radians(rotation_jupiter));
   texture(jupiter);
   sphere(100);
@@ -184,7 +205,7 @@ function draw() {
 
   push();
   rotateY(radians(angle_saturn));
-  translate(1800, 0, 0);
+  translate(2300, 0, 0);
   rotateY(radians(rotation_saturn));
   texture(saturn);
   sphere(85);
@@ -199,7 +220,7 @@ function draw() {
 
   push();
   rotateY(radians(angle_uranus));
-  translate(2200, 0, 0);
+  translate(2900, 0, 0);
   rotateY(radians(rotation_uranus));
   texture(uranus);
   sphere(70);
@@ -207,14 +228,13 @@ function draw() {
 
   push();
   rotateY(radians(angle_neptune));
-  translate(2600, 0, 0);
+  translate(3300, 0, 0);
   rotateY(radians(rotation_neptune));
   texture(neptune);
   sphere(65);
   pop();
 
   smooth();
-
  }
 
 // Funcion para generar los planetas
@@ -242,4 +262,51 @@ function mouseReleased() {
   // Resetear rotaciones para detener el movimiento
   camRotX = 0;
   camRotY = 0;
+}
+
+function drawOrbit(radius) {
+  noFill();
+  stroke(110); // Color blanco
+  strokeWeight(0.5); // Grosor de línea
+  beginShape();
+  for (let angle = 0; angle < 360; angle += 5) { // Dibuja círculo con segmentos cada 5°
+    let x = cos(radians(angle)) * radius;
+    let z = sin(radians(angle)) * radius;
+    vertex(x, 0, z);
+  }
+  endShape(CLOSE);
+}
+
+function repositionCamera() {
+  const sunCheck = document.getElementById('sun_check');
+  const earthCheck = document.getElementById('earth_check');
+
+  if (sunCheck.checked) {
+    cameraMode = 'sun';
+    // Reposicionar la cámara para centrar el Sol
+    window.location.reload();
+    
+  } else if (earthCheck.checked) {
+    cameraMode = 'earth';
+    
+    //Calcular la posición de la Tierra en su órbita
+    const earthOrbitRadius = 600;
+    const earthAngle = radians(angle_earth);
+    const earthX = earthOrbitRadius * cos(earthAngle);
+    const earthZ = earthOrbitRadius * sin(earthAngle);
+
+    // Reposicionar la cámara cerca de la Tierra
+    cam.lookAt(earthX, 0, earthZ);
+    cam.setPosition(earthX + 50, 50, earthZ + 50);
+  }
+}
+
+function changeSpeed(multiplier) {
+  speedMultiplier = multiplier;
+  
+  // Actualizar estado visual de los botones
+  document.querySelectorAll('.speed-btn').forEach(btn => {
+    btn.classList.remove('active');
+  });
+  document.getElementById(`speed${multiplier}x`).classList.add('active');
 }

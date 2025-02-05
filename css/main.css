@@ -47,3 +47,15 @@ h1{letter-spacing: -0.03em;
     top: 2px;
     cursor: pointer;
 }
+
+.btn-group {
+    padding-top: 20px;
+}
+
+.speed-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+  
