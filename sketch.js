@@ -61,7 +61,6 @@ function preload() {
   makemake_map = loadImage("./img/makemake.jpg");
   death_star = loadImage("./img/death_star_1.png");
   mistery = createVideo("./img/points.mp4");
-  fondo = loadImage("./img/fondo.webp");
 }
 
 console.log("esto rula!");
