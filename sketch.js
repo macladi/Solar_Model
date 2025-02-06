@@ -22,7 +22,7 @@ let rotation_saturn = 0;
 let rotation_uranus = 0;
 let rotation_neptune = 0;
 
-let cameraMode = "sun";
+let currentView = "sun";
 let speedMultiplier = 1;
 
 const earthSize = 60;  // Tamaño de la Tierra
@@ -61,6 +61,7 @@ function preload() {
   makemake_map = loadImage("./img/makemake.jpg");
   death_star = loadImage("./img/death_star_1.png");
   mistery = createVideo("./img/points.mp4");
+  fondo = loadImage("./img/fondo.webp");
 }
 
 console.log("esto rula!");
@@ -70,12 +71,27 @@ function setup() {
   cam = createCamera();
   mistery.hide();
 
-   // Establecemos la posición por defecto de la cámara (centrada en el Sol)
-   cam.setPosition(defaultCamPosition.x, defaultCamPosition.y, defaultCamPosition.z);
+  // Añade event listeners para los checkboxes
+  document.getElementById('sun_check').addEventListener('change', () => {
+    if (document.getElementById('sun_check').checked) {
+      currentView = 'sun';
+      resetView();
+    }
+  });
 
-  // Agregar event listeners a los botones o checkboxes para reposicionar la cámara
-  document.getElementById('sun_check').addEventListener('change', repositionCamera);
-  document.getElementById('earth_check').addEventListener('change', repositionCamera);
+  document.getElementById('earth_check').addEventListener('change', () => {
+    if (document.getElementById('earth_check').checked) {
+      currentView = 'earth';
+      resetView();
+    }
+  });
+
+  document.getElementById('death_star_check').addEventListener('change', () => {
+    if (document.getElementById('death_star_check').checked) {
+      currentView = 'death_star';
+      resetView();
+    }
+  });
 
 }
 
@@ -129,111 +145,157 @@ function draw() {
   noStroke();
 
 
-  push();
-  rotateY(-frameCount * 0.001); // Opcional: rotación suave de las órbitas
-  drawOrbit(300);    // Mercurio
-  drawOrbit(550);    // Venus
-  drawOrbit(900);    // Tierra
-  drawOrbit(1350);    // Marte
-  drawOrbit(1750);   // Júpiter
-  drawOrbit(2300);   // Saturno
-  drawOrbit(2900);   // Urano
-  drawOrbit(3300);   // Neptuno
-  pop();
+  const sunCheck = document.getElementById('sun_check').checked;
+  const earthCheck = document.getElementById('earth_check').checked;
+
+  // Actualizar vista actual
+  if (sunCheck) currentView = 'sun';
+  else if (earthCheck) currentView = 'earth';
+
+  if (currentView === 'sun') {
+
+    push();
+    rotateY(-frameCount * 0.001); // Opcional: rotación suave de las órbitas
+    drawOrbit(300);    // Mercurio
+    drawOrbit(550);    // Venus
+    drawOrbit(900);    // Tierra
+    drawOrbit(1350);    // Marte
+    drawOrbit(1750);   // Júpiter
+    drawOrbit(2300);   // Saturno
+    drawOrbit(2900);   // Urano
+    drawOrbit(3300);   // Neptuno
+    pop();
 
 
-  createPlanet(150, 150, sun_img, 0, 0, 0, false, rotation_sun); // Sol
+    createPlanet(150, 150, sun_img, 0, 0, 0, false, rotation_sun); // Sol
 
-  push();
-  rotateY(radians(angle_mercury));
-  translate(300, 0, 0);
-  rotateY(radians(rotation_mercury));
-  texture(mercury);
-  sphere(15);
-  pop();
+    push();
+    rotateY(radians(angle_mercury));
+    translate(300, 0, 0);
+    rotateY(radians(rotation_mercury));
+    texture(mercury);
+    sphere(15);
+    pop();
 
-  push();
-  rotateY(radians(angle_venus));
-  translate(550, 0, 0);
-  push();
-  rotateY(radians(rotation_venus));
-  texture(venus);
-  sphere(25);
-  texture(venus_atm);
-  sphere(27);
-  pop();
-  pop();
+    push();
+    rotateY(radians(angle_venus));
+    translate(550, 0, 0);
+    push();
+    rotateY(radians(rotation_venus));
+    texture(venus);
+    sphere(25);
+    texture(venus_atm);
+    sphere(27);
+    pop();
+    pop();
 
-  push();
-  rotateY(radians(angle_earth)); // Órbita terrestre
-  translate(900, 0, 0);
-  push();
-  rotateY(radians(rotation_earth));
-  texture(earth);
-  sphere(earthSize);
-  texture(earth_clouds);
-  sphere(earthSize * 1.03);
-  pop();
-  
-  // Luna
-  push();
-  rotateY(radians(angle_moon)); // Órbita lunar
-  translate(moonDistance, 0, 0);
-  rotateY(radians(rotation_moon));
-  texture(moon);
-  sphere(moonSize);
-  pop();
-  
-  pop();
-
-
-  push();
-  rotateY(radians(angle_mars));
-  translate(1350, 0, 0);
-  rotateY(radians(rotation_mars));
-  texture(mars);
-  sphere(20);
-  pop();
-
-  push();
-  rotateY(radians(angle_jupiter));
-  translate(1750, 0, 0);
-  rotateY(radians(rotation_jupiter));
-  texture(jupiter);
-  sphere(100);
-  pop();
-
-  push();
-  rotateY(radians(angle_saturn));
-  translate(2300, 0, 0);
-  rotateY(radians(rotation_saturn));
-  texture(saturn);
-  sphere(85);
-  // Anillos
-  push();
-  rotateX(PI/2); // Orientar anillos
-  texture(saturn_ring);
-  torus(89, 15); 
-  pop();
-  pop();
+    push();
+    rotateY(radians(angle_earth)); // Órbita terrestre
+    translate(900, 0, 0);
+    push();
+    rotateY(radians(rotation_earth));
+    texture(earth);
+    sphere(earthSize);
+    texture(earth_clouds);
+    sphere(earthSize * 1.03);
+    pop();
+    
+    // Luna
+    push();
+    rotateY(radians(angle_moon)); // Órbita lunar
+    translate(moonDistance, 0, 0);
+    rotateY(radians(rotation_moon));
+    texture(moon);
+    sphere(moonSize);
+    pop();
+    
+    pop();
 
 
-  push();
-  rotateY(radians(angle_uranus));
-  translate(2900, 0, 0);
-  rotateY(radians(rotation_uranus));
-  texture(uranus);
-  sphere(70);
-  pop();
+    push();
+    rotateY(radians(angle_mars));
+    translate(1350, 0, 0);
+    rotateY(radians(rotation_mars));
+    texture(mars);
+    sphere(20);
+    pop();
 
-  push();
-  rotateY(radians(angle_neptune));
-  translate(3300, 0, 0);
-  rotateY(radians(rotation_neptune));
-  texture(neptune);
-  sphere(65);
-  pop();
+    push();
+    rotateY(radians(angle_jupiter));
+    translate(1750, 0, 0);
+    rotateY(radians(rotation_jupiter));
+    texture(jupiter);
+    sphere(100);
+    pop();
 
+    push();
+    rotateY(radians(angle_saturn));
+    translate(2300, 0, 0);
+    rotateY(radians(rotation_saturn));
+    texture(saturn);
+    sphere(85);
+    // Anillos
+    push();
+    rotateX(PI/2); // Orientar anillos
+    texture(saturn_ring);
+    torus(100, 5); 
+    torus(110, 7); 
+    torus(115, 11); 
+    torus(130, 13); 
+    torus(150, 3); 
+    pop();
+    pop();
+
+
+    push();
+    rotateY(radians(angle_uranus));
+    translate(2900, 0, 0);
+    rotateY(radians(rotation_uranus));
+    texture(uranus);
+    sphere(70);
+    pop();
+
+    push();
+    rotateY(radians(angle_neptune));
+    translate(3300, 0, 0);
+    rotateY(radians(rotation_neptune));
+    texture(neptune);
+    sphere(65);
+    pop();
+
+  } else if (currentView === 'earth') {
+    
+    push();
+    translate(900, 0, 0);
+    push();
+    rotateY(radians(rotation_earth));
+    texture(earth);
+    sphere(earthSize);
+    texture(earth_clouds);
+    sphere(earthSize * 1.03);
+    pop();
+    
+    // Luna
+    push();
+    rotateY(radians(angle_moon)); // Órbita lunar
+    translate(moonDistance, 0, 0);
+    rotateY(radians(rotation_moon));
+    texture(moon);
+    sphere(moonSize);
+    pop();
+    
+    pop();
+  } else if (currentView === 'death_star') {
+    
+    push();
+    translate(900, 0, 0);
+    push();
+    texture(death_star);
+    sphere(earthSize);
+    pop();
+    
+    pop();
+  }
   smooth();
  }
 
@@ -242,7 +304,7 @@ const createPlanet = (sizeX, sizeY, img, orbitalAngle, translateX, translateY, f
   if (followOrbit) push();
   rotateY(radians(orbitalAngle));
   translate(translateX, translateY);
-  rotateY(radians(rotationAngle));  // Nueva línea para rotación axial
+  rotateY(radians(rotationAngle));  
   texture(img);
   sphere(sizeX, sizeY);
   if (followOrbit) pop();
@@ -256,20 +318,38 @@ function mouseDragged() {
   dragging = true;
 }
 
+
+function resetView() {
+  if (currentView === 'sun') {
+    cam.setPosition(0, 0, 1000);
+    cam.lookAt(0, 0, 0);
+  } else if (currentView === 'earth') {
+    const earthOrbitRadius = 900;
+    const cameraDistance = 200;
+    cam.setPosition(earthOrbitRadius + cameraDistance, 100, cameraDistance);
+    cam.lookAt(earthOrbitRadius, 0, 0);
+  } else if (currentView === 'death_star') {
+    const earthOrbitRadius = 900;
+    const cameraDistance = 200;
+    cam.setPosition(earthOrbitRadius + cameraDistance, 100, cameraDistance);
+    cam.lookAt(earthOrbitRadius, 0, 0);
+  }
+}
+
+
 // Detener la cámara al soltar el ratón
 function mouseReleased() {
   dragging = false;
-  // Resetear rotaciones para detener el movimiento
   camRotX = 0;
   camRotY = 0;
 }
 
 function drawOrbit(radius) {
   noFill();
-  stroke(110); // Color blanco
-  strokeWeight(0.5); // Grosor de línea
+  stroke(110); 
+  strokeWeight(0.5);
   beginShape();
-  for (let angle = 0; angle < 360; angle += 5) { // Dibuja círculo con segmentos cada 5°
+  for (let angle = 0; angle < 360; angle += 5) {
     let x = cos(radians(angle)) * radius;
     let z = sin(radians(angle)) * radius;
     vertex(x, 0, z);
@@ -277,34 +357,11 @@ function drawOrbit(radius) {
   endShape(CLOSE);
 }
 
-function repositionCamera() {
-  const sunCheck = document.getElementById('sun_check');
-  const earthCheck = document.getElementById('earth_check');
 
-  if (sunCheck.checked) {
-    cameraMode = 'sun';
-    // Reposicionar la cámara para centrar el Sol
-    window.location.reload();
-    
-  } else if (earthCheck.checked) {
-    cameraMode = 'earth';
-    
-    //Calcular la posición de la Tierra en su órbita
-    const earthOrbitRadius = 600;
-    const earthAngle = radians(angle_earth);
-    const earthX = earthOrbitRadius * cos(earthAngle);
-    const earthZ = earthOrbitRadius * sin(earthAngle);
-
-    // Reposicionar la cámara cerca de la Tierra
-    cam.lookAt(earthX, 0, earthZ);
-    cam.setPosition(earthX + 50, 50, earthZ + 50);
-  }
-}
 
 function changeSpeed(multiplier) {
   speedMultiplier = multiplier;
   
-  // Actualizar estado visual de los botones
   document.querySelectorAll('.speed-btn').forEach(btn => {
     btn.classList.remove('active');
   });
