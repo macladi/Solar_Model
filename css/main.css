@@ -58,4 +58,29 @@ h1{letter-spacing: -0.03em;
     justify-content: center;
 }
 
+.compact-menu {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    z-index: 1000;
+}
+.compact-menu .panel {
+    width: 300px;
+    transition: transform 0.3s ease-in-out;
+    transform: translateX(-400px); /* Oculta el panel por defecto */
+}
+.compact-menu .panel.show {
+    transform: translateX(0); /* Muestra el panel cuando tiene la clase 'show' */
+}
+.compact-menu .toggle-button {
+    position: absolute;
+    right: -40px;
+    top: 10px;
+    background-color: #343a40; /* Color de fondo similar al panel */
+    color: white;
+    padding: 10px;
+    border: none;
+    cursor: pointer;
+    border-radius: 5px;
+}
   

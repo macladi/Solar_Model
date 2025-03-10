@@ -1,78 +1,65 @@
-<!DOCTYPE html>
-<html lang="en" data-bs-theme="dark">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script src="p5/p5.min.js"></script>
-    <script src="sketch.js"></script>
-    <link href="css/main.css" rel="stylesheet">
-    <link href="css/bootstrap.css" rel="stylesheet">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
-    <title>Sistema Solar</title>
-</head>
-<body>
-  <div class="container panel background_panel" style="max-width: 300px;">
-    <div class="close_icon" id="close_icon"><i></i></div>
-    <div class="row">
-      <div class="col-12">
-        <h1>Sistema Solar</h1>
-        <p class="explain">Juega como si fueras un <strong>Dios!</strong></p>
-      </div>
-  
-      <div class="col-6">
-        <i class="bi bi-globe-americas"></i>
-        <div class="form-check my-1">
-          <input class="form-check-input" type="radio" name="flexRadioDefault" id="sun_check" checked>
-          <label class="form-check-label" for="flexRadioDefault1">
-            Sun
-          </label>
-        </div>
-        <div class="form-check my-1">
-          <input class="form-check-input" type="radio" name="flexRadioDefault" id="earth_check">
-          <label class="form-check-label" for="flexRadioDefault2">
-            earth
-          </label>
-        </div>
-        <div class="form-check my-1">
-          <input class="form-check-input" type="radio" name="flexRadioDefault" id="death_star_check">
-          <label class="form-check-label" for="flexRadioDefault2">
-            death_star
-          </label>
-        </div>
-      </div>
-      <div class="btn-group d-flex gap-2">
-        <button 
-          id="speed1x" 
-          class="btn btn-outline-primary speed-btn active"
-          onclick="changeSpeed(1)">
-          1x
+  <!DOCTYPE html>
+  <html lang="en" data-bs-theme="dark">
+  <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <script src="p5/p5.min.js"></script>
+      <script src="sketch.js"></script>
+      <link href="css/main.css" rel="stylesheet">
+      <link href="css/bootstrap.css" rel="stylesheet">
+      <link rel="preconnect" href="https://fonts.googleapis.com">
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+      <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet">
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+      <title>Sistema Solar</title>
+  </head>
+  <body>
+    <div class="compact-menu">
+        <button class="toggle-button" id="toggleMenu">
+            <i class="bi bi-gear"></i>
         </button>
-        <button 
-          id="speed2x" 
-          class="btn btn-outline-primary speed-btn"
-          onclick="changeSpeed(2)">
-          2x
-        </button>
-        <button 
-          id="speed4x" 
-          class="btn btn-outline-primary speed-btn"
-          onclick="changeSpeed(4)">
-          4x
-        </button>
-      </div>
-      </div>
+        <div class="container panel background_panel" id="menuPanel">
+            <div class="close_icon" id="close_icon"><i></i></div>
+            <div class="row">
+                <div class="col-12">
+                    <h1>Sistema Solar</h1>
+                    <p class="explain">Juega como si fueras un <strong>Dios!</strong></p>
+                </div>
+                <div class="col-6">
+                    <i class="bi bi-globe-americas"></i>
+                    <div class="form-check my-1">
+                        <input class="form-check-input" type="radio" name="flexRadioDefault" id="sun_check" checked>
+                        <label class="form-check-label" for="flexRadioDefault1">Sun</label>
+                    </div>
+                    <div class="form-check my-1">
+                        <input class="form-check-input" type="radio" name="flexRadioDefault" id="earth_check">
+                        <label class="form-check-label" for="flexRadioDefault2">earth</label>
+                    </div>
+                    <div class="form-check my-1">
+                        <input class="form-check-input" type="radio" name="flexRadioDefault" id="death_star_check">
+                        <label class="form-check-label" for="flexRadioDefault2">death_star</label>
+                    </div>
+                </div>
+                <div class="btn-group d-flex gap-2">
+                    <button id="speed1x" class="btn btn-outline-primary speed-btn active" onclick="changeSpeed(1)">1x</button>
+                    <button id="speed2x" class="btn btn-outline-primary speed-btn" onclick="changeSpeed(2)">2x</button>
+                    <button id="speed4x" class="btn btn-outline-primary speed-btn" onclick="changeSpeed(4)">4x</button>
+                </div>
+            </div>
+        </div>
     </div>
-  </div>
-  </div>
- 
-
-    <link href="js/bootstrap.bundle.min.js">
-    
 
     <script src="js/bootstrap.bundle.min.js"></script>
-</body>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const toggleButton = document.getElementById('toggleMenu');
+            const menuPanel = document.getElementById('menuPanel');
+
+            toggleButton.addEventListener('click', function() {
+                menuPanel.classList.toggle('show');
+            });
+        });
+    </script>
+  </body>
 </html>
