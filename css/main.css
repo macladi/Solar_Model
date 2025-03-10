@@ -75,7 +75,7 @@ h1{letter-spacing: -0.03em;
 .compact-menu .toggle-button {
     position: absolute;
     right: -40px;
-    top: 10px;
+    top: 5px;
     background-color: #343a40; /* Color de fondo similar al panel */
     color: white;
     padding: 10px;
