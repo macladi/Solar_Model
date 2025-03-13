@@ -173,10 +173,8 @@
 
 
       createPlanet(150, 150, sun_img, 0, 0, 0, false, rotation_sun); // Sol
-      // drawPlanetName("Sol", 0, -180, 0); // Nombre del Sol
-      drawPlanetName("Sol", 0, -100, 0);
-
-      // text("Sol", 0 ,0);
+      // drawPlanetName("Sol", 0, -180, 0); // Nombre del Sol, no funciona
+      text("Sol", 0 ,0);
 
       push();
       rotateY(radians(angle_mercury));
@@ -376,33 +374,16 @@
   }
 
 
-  // function drawPlanetName(name, x, y, z) {
-  //   push();
-  //   resetMatrix();
-  //   // Usamos una cámara ortográfica para superponer el texto
-  //   ortho();
-  //   fill(255);
-  //   textAlign(CENTER, CENTER);
-  //   textSize(30);
-  //   // Convertimos las coordenadas de la escena 3D a 2D (se asume que (width/2, height/2) es el centro)
-  //   text(name, screenPos.x, screenPos.y - 50);
-  //   pop();
-  // }
-
-  function drawPlanetName(name, x, y, z) {
+  function drawPlanetName(name, x, y, z) { // De momento no funciona
     push();
-    
-    // Convierte la posición 3D del planeta a coordenadas de pantalla
-    let screenPos = screenPosition(x, y, z);
-  
-    // Si está dentro de la pantalla, dibuja el texto
-    if (screenPos.x > 0 && screenPos.x < width && screenPos.y > 0 && screenPos.y < height) {
-      fill(255);
-      textAlign(CENTER, CENTER);
-      textSize(30);
-      text(name, screenPos.x, screenPos.y - 40); // Ajusta la posición del texto
-    }
-  
+    resetMatrix();
+    // Usamos una cámara ortográfica para superponer el texto
+    ortho();
+    fill(255);
+    textAlign(CENTER, CENTER);
+    textSize(30);
+    // Convertimos las coordenadas de la escena 3D a 2D (se asume que (width/2, height/2) es el centro)
+    text(name, screenPos.x, screenPos.y - 50);
     pop();
   }
   
