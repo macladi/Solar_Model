@@ -1,389 +1,282 @@
-  // Variables para las rotaciones de cada planeta
-  let angle_sun = 0;
-  let angle_mercury = 0;
-  let angle_venus = 0;
-  let angle_earth = 0;
-  let angle_moon = 0;
-  let angle_mars = 0;
-  let angle_jupiter = 0;
-  let angle_saturn = 0;
-  let angle_uranus = 0;
-  let angle_neptune = 0;
+let textures = {};
+let starBackground;
+let bodies = [];
+let selectedBody = null;
 
-  // Variables para las rotaciones AXIALES (sobre su eje)
-  let rotation_sun = 0;
-  let rotation_mercury = 0;
-  let rotation_venus = 0;
-  let rotation_earth = 0;
-  let rotation_moon = 0;
-  let rotation_mars = 0;
-  let rotation_jupiter = 0;
-  let rotation_saturn = 0;
-  let rotation_uranus = 0;
-  let rotation_neptune = 0;
+// Camera orbit params
+let camYaw = 0, camPitch = 0, camRadius = 800;
+// Camera center and panning
+let camCenter, panFromCenter, panToCenter;
+let panT = 0, panDuration = 1000, isPanning = false;
 
-  let currentView = "sun";
-  let speedMultiplier = 1;
+// Mouse drag
+let isDragging = false, lastMouseX = 0, lastMouseY = 0;
+const dragSensitivity = 0.01;
 
-  const earthSize = 60;  // Tamaño de la Tierra
-  const moonSize = earthSize * 0.27; // Tamaño de la Luna (27% del tamaño de la Tierra)
-  const moonDistance = earthSize * 4; // Distancia entre Tierra y Luna (40 radios terrestres)
+// Orbit toggle
+let showOrbits = true;
 
-  let defaultCamPosition = { x: 0, y: 0, z: 1000 };
-  let earthCamPosition = { x: 600, y: 0, z: 1000 };
+// Picking buffer
+let pickBuffer;
 
+// Sidebar menu
+let menuDiv;
+let closeBtn;
+let resetBtn;
 
-  // Variables camara
-  let cam;
-  let camX = 0,
-    camY = 0,
-    camZ = 1000; // Posición inicial de la cámara
-  let camRotX = 0,
-    camRotY = 0; // Rotación acumulada de la cámara
-  let dragging = false; // Estado: si se está arrastrando el ratón
+function preload() {
+  const names = ['Sun', 'Mercury', 'Venus', 'Earth', 'Moon', 'Mars', 'Jupiter', 'Saturn', 'Uranus', 'Neptune'];
+  names.forEach(name => {
+    textures[name] = loadImage(`textures/${name.toLowerCase()}.jpg`);
+  });
+  starBackground = loadImage('textures/stars.jpg');
+}
 
-  let miFuente;
+function setup() {
+  createCanvas(windowWidth, windowHeight, WEBGL);
 
-  function preload() {
-    sun_img = loadImage("./img/solete2k.jpg");
-    mercury = loadImage("./img/Mercurio2K.jpg");
-    venus = loadImage("./img/Venus.jpg");
-    venus_atm = loadImage("./img/VenusAtm.jpg");
-    earth = loadImage("./img/8k_earth_daymap.jpg");
-    earth_clouds = loadImage("./img/earth_clouds_2048.png");
-    moon = loadImage("./img/moon-texture.jpg");
-    mars = loadImage("./img/marte.jpg");
-    jupiter = loadImage("./img/jupiter.jpg");
-    saturn = loadImage("./img/saturno.jpg");
-    saturn_ring = loadImage("./img/saturn_ring.png");
-    uranus = loadImage("./img/uranus.jpg");
-    neptune = loadImage("./img/neptuno.jpg");
+  // Initialize camera center at origin
+  camCenter = createVector(0, 0, 0);
 
-    space = loadImage("./img/background-space.jpg");
-    makemake_map = loadImage("./img/makemake.jpg");
-    death_star = loadImage("./img/death_star_1.png");
+  // Picking buffer
+  pickBuffer = createGraphics(windowWidth, windowHeight, WEBGL);
 
-    
-    mistery = createVideo("./img/points.mp4");
-
-    miFuente = loadFont('fonts/Poppins-Font/Poppins-Black.ttf');
-  }
-
-  console.log("esto rula!");
-
-  function setup() {
-    createCanvas(windowWidth, windowHeight, WEBGL);
-    cam = createCamera();
-    mistery.hide();
-    textFont(miFuente);
-
-    // Añade event listeners para los checkboxes
-    document.getElementById('sun_check').addEventListener('change', () => {
-      if (document.getElementById('sun_check').checked) {
-        currentView = 'sun';
-        resetView();
-      }
-    });
-
-    document.getElementById('earth_check').addEventListener('change', () => {
-      if (document.getElementById('earth_check').checked) {
-        currentView = 'earth';
-        resetView();
-      }
-    });
-
-    document.getElementById('death_star_check').addEventListener('change', () => {
-      if (document.getElementById('death_star_check').checked) {
-        currentView = 'death_star';
-        resetView();
-      }
-    });
-
-  }
-
-  function draw() {
-    const speed = 15;
-
-    if (keyIsDown(87)) cam.move(0, 0, -speed); // W
-    if (keyIsDown(83)) cam.move(0, 0, speed); // S
-    if (keyIsDown(65)) cam.move(-speed, 0, 0); // A
-    if (keyIsDown(68)) cam.move(speed, 0, 0); // D
-
-    // Limitar el ángulo vertical de la cámara
-    camRotX = constrain(camRotX, -PI / 2, PI / 2);
-
-    // Actualizar rotación de la cámara
-    if (dragging) {
-      cam.pan(camRotY); // Rotación horizontal
-      cam.tilt(camRotX); // Rotación vertical
+  // Create bodies
+  bodies.push(new CelestialBody('Sun', 50, 0, 0, textures['Sun'], null, 'The Sun is the star at the center.'));
+  const planetData = [
+    ['Mercury', 5, 80, 0.02, 'Closest to Sun.'],
+    ['Venus', 12, 110, 0.015, 'Thick toxic atmosphere.'],
+    ['Earth', 12, 140, 0.01, 'Our home.'],
+    ['Mars', 8, 180, 0.008, 'The Red Planet.'],
+    ['Jupiter', 25, 250, 0.005, 'Largest planet.'],
+    ['Saturn', 22, 320, 0.004, 'Famous rings.'],
+    ['Uranus', 18, 380, 0.003, 'Rotates on its side.'],
+    ['Neptune', 18, 440, 0.002, 'Strongest winds.']
+  ];
+  planetData.forEach(p => {
+    let [name, r, d, s, info] = p;
+    let pl = new CelestialBody(name, r, d, s * 1.5, textures[name], bodies[0], info);
+    bodies.push(pl);
+    if (name === 'Earth') {
+      bodies.push(new CelestialBody('Moon', 4, 20, 0.03 * 1.5, textures['Moon'], pl, 'Orbits Earth.'));
     }
+  });
 
-    // Actualizar ángulos de rotación de los planetas
-    angle_sun += 0.01 * speedMultiplier;
-    angle_mercury += 0.1 * speedMultiplier;
-    angle_venus += 0.08 * speedMultiplier;
-    angle_earth += 0.05 * speedMultiplier;
-    angle_moon += 0.09 * speedMultiplier;
-    angle_mars += 0.03 * speedMultiplier;
-    angle_jupiter += 0.02 * speedMultiplier;
-    angle_saturn += 0.01 * speedMultiplier;
-    angle_uranus += 0.007 * speedMultiplier;
-    angle_neptune += 0.005 * speedMultiplier;
+  // Sidebar menu
+  menuDiv = createDiv('').id('menuDiv')
+    .style('position', 'absolute')
+    .style('top', '50px').style('right', '0')
+    .style('width', '250px').style('max-height', '80%')
+    .style('overflow', 'auto')
+    .style('background', 'rgba(0,0,0,0.8)')
+    .style('color', '#fff').style('padding', '16px')
+    .style('font-family', 'sans-serif')
+    .hide();
 
+  // Close button
+  closeBtn = createButton('×')
+    .style('position', 'absolute').style('top', '8px').style('right', '8px')
+    .style('background', 'none').style('border', 'none').style('color', '#fff')
+    .style('font-size', '20px').mousePressed(() => {
+      menuDiv.hide();
+      resetCamera();
+    });
+}
 
-    rotation_sun += 0.02;      // Sol: 27 días terrestres por rotación
-    rotation_mercury += 0.015; // Mercurio: 58 días
-    rotation_venus -= 0.01;    // Venus: -243 días (rotación retrógrada)
-    rotation_earth += 0.05;    // Tierra: 1 día
-    rotation_moon += 0.002;    // Luna: 27 días (rotación sincrónica)
-    rotation_mars += 0.03;     // Marte: 1.02 días
-    rotation_jupiter += 0.1;   // Júpiter: 9.9 horas
-    rotation_saturn += 0.08;   // Saturno: 10.7 horas
-    rotation_uranus += 0.04;   // Urano: -17h (eje inclinado)
-    rotation_neptune += 0.03;  // Neptuno: 16h
-    
-    //Luces
-    background(0, 0, 0, 0);
-    lights()
-    pointLight(255, 255, 255, 0, 0, 0);
-    pointLight(160, 160, 160, -1000, -1000, 500);
-    noStroke();
+function draw() {
+  background(0);
 
+  // 1) Update panning
+  if (isPanning) {
+    panT += deltaTime;
+    let t = min(panT / panDuration, 1);
+    // ease-out cubic
+    let e = (--t) * t * t + 1;
+    camCenter = p5.Vector.lerp(panFromCenter, panToCenter, e);
+    if (panT >= panDuration) isPanning = false;
+  }
 
-    const sunCheck = document.getElementById('sun_check').checked;
-    const earthCheck = document.getElementById('earth_check').checked;
+  // Compute camera position
+  let camX = camCenter.x + camRadius * cos(camYaw) * cos(camPitch);
+  let camY = camCenter.y + camRadius * sin(camPitch);
+  let camZ = camCenter.z + camRadius * sin(camYaw) * cos(camPitch);
 
-    // Actualizar vista actual
-    if (sunCheck) currentView = 'sun';
-    else if (earthCheck) currentView = 'earth';
+  // 2) Render picking buffer
+  pickBuffer.push();
+  pickBuffer.clear();
+  pickBuffer.camera(camX, camY, camZ, camCenter.x, camCenter.y, camCenter.z, 0, 1, 0);
 
-    if (currentView === 'sun') {
+  // Render celestial bodies for picking
+  bodies.forEach((b, i) => {
+    pickBuffer.push();
+    let pos = b.getPosition();
+    pickBuffer.translate(pos.x, pos.y, pos.z);
+    pickBuffer.noStroke();
+    pickBuffer.fill(i + 1, 0, 0);  // Assign a unique ID based on the index
+    pickBuffer.sphere(b.radius, 24, 24);
+    pickBuffer.pop();
+  });
 
+  pickBuffer.pop();
+
+  // 3) Main scene rendering
+  pointLight(255, 255, 200, 0, 0, 0);
+  ambientLight(30);
+  camera(camX, camY, camZ, camCenter.x, camCenter.y, camCenter.z, 0, 1, 0);
+
+  // Starfield
+  push();
+  noLights();
+  noStroke();
+  texture(starBackground);
+  scale(-1, 1, 1);
+  sphere(2000, 64, 64);
+  pop();
+
+  if (showOrbits) drawOrbits();
+
+  bodies.forEach(b => { b.update(); b.display(); });
+}
+
+function drawOrbits() {
+  push();
+  noFill();
+  stroke(150);
+  strokeWeight(0.5);
+  bodies.forEach(b => {
+    if (b.parent && b.orbitRadius > 0) {
       push();
-      rotateY(-frameCount * 0.001); // Opcional: rotación suave de las órbitas
-      drawOrbit(300);    // Mercurio
-      drawOrbit(550);    // Venus
-      drawOrbit(900);    // Tierra
-      drawOrbit(1350);    // Marte
-      drawOrbit(1750);   // Júpiter
-      drawOrbit(2300);   // Saturno
-      drawOrbit(2900);   // Urano
-      drawOrbit(3300);   // Neptuno
-      pop();
-
-
-      createPlanet(150, 150, sun_img, 0, 0, 0, false, rotation_sun); // Sol
-      // drawPlanetName("Sol", 0, -180, 0); // Nombre del Sol, no funciona
-      text("Sol", 0 ,0);
-
-      push();
-      rotateY(radians(angle_mercury));
-      translate(300, 0, 0);
-      rotateY(radians(rotation_mercury));
-      texture(mercury);
-      sphere(15);
-      pop();
-
-      push();
-      rotateY(radians(angle_venus));
-      translate(550, 0, 0);
-      push();
-      rotateY(radians(rotation_venus));
-      texture(venus);
-      sphere(25);
-      texture(venus_atm);
-      sphere(27);
-      pop();
-      pop();
-
-      push();
-      rotateY(radians(angle_earth)); // Órbita terrestre
-      translate(900, 0, 0);
-      push();
-      rotateY(radians(rotation_earth));
-      texture(earth);
-      sphere(earthSize);
-      texture(earth_clouds);
-      sphere(earthSize * 1.03);
-      pop();
-      
-      // Luna
-      push();
-      rotateY(radians(angle_moon)); // Órbita lunar
-      translate(moonDistance, 0, 0);
-      rotateY(radians(rotation_moon));
-      texture(moon);
-      sphere(moonSize);
-      pop();
-      
-      pop();
-
-
-      push();
-      rotateY(radians(angle_mars));
-      translate(1350, 0, 0);
-      rotateY(radians(rotation_mars));
-      texture(mars);
-      sphere(20);
-      pop();
-
-      push();
-      rotateY(radians(angle_jupiter));
-      translate(1750, 0, 0);
-      rotateY(radians(rotation_jupiter));
-      texture(jupiter);
-      sphere(100);
-      pop();
-
-      push();
-      rotateY(radians(angle_saturn));
-      translate(2300, 0, 0);
-      rotateY(radians(rotation_saturn));
-      texture(saturn);
-      sphere(85);
-      // Anillos
-      push();
-      rotateX(PI/2); // Orientar anillos
-      texture(saturn_ring);
-      torus(100, 5); 
-      torus(110, 7); 
-      torus(115, 11); 
-      torus(130, 13); 
-      torus(150, 3); 
-      pop();
-      pop();
-
-
-      push();
-      rotateY(radians(angle_uranus));
-      translate(2900, 0, 0);
-      rotateY(radians(rotation_uranus));
-      texture(uranus);
-      sphere(70);
-      pop();
-
-      push();
-      rotateY(radians(angle_neptune));
-      translate(3300, 0, 0);
-      rotateY(radians(rotation_neptune));
-      texture(neptune);
-      sphere(65);
-      pop();
-
-    } else if (currentView === 'earth') {
-      
-      push();
-      translate(900, 0, 0);
-      push();
-      rotateY(radians(rotation_earth));
-      texture(earth);
-      sphere(earthSize);
-      texture(earth_clouds);
-      sphere(earthSize * 1.03);
-      pop();
-      
-      // Luna
-      push();
-      rotateY(radians(angle_moon)); // Órbita lunar
-      translate(moonDistance, 0, 0);
-      rotateY(radians(rotation_moon));
-      texture(moon);
-      sphere(moonSize);
-      pop();
-      pop();
-
-    } else if (currentView === 'death_star') {
-      
-      push();
-      translate(900, 0, 0);
-      push();
-      texture(death_star);
-      sphere(earthSize);
-      pop();
-      
+      let c = b.parent.getPosition();
+      translate(c.x, c.y, c.z);
+      beginShape();
+      for (let a = 0; a < TWO_PI + 0.1; a += 0.1) vertex(cos(a) * b.orbitRadius, 0, sin(a) * b.orbitRadius);
+      endShape(CLOSE);
       pop();
     }
-    smooth();
+  });
+  pop();
+}
+
+function mousePressed() {
+  isDragging = true;
+  lastMouseX = mouseX;
+  lastMouseY = mouseY;
+
+  // Pick
+  let pix = pickBuffer.get(mouseX, mouseY);
+  let id = pix[0];
+
+  console.log("pix: ", pix);
+  console.log("id: ", id);
+
+  if (id > 0 && id <= bodies.length) {
+    // start pan
+    panFromCenter = camCenter.copy();
+    panToCenter = bodies[id - 1].getPosition();
+    panT = 0;
+    isPanning = true;
+    selectedBody = bodies[id - 1];
+    showMenu(selectedBody);
+  }
+}
+
+
+function mouseDragged() {
+  if (isDragging && !isPanning) {
+    let dx = (mouseX - lastMouseX) * dragSensitivity;
+    let dy = (mouseY - lastMouseY) * dragSensitivity;
+    camYaw += dx;
+    camPitch = constrain(camPitch + dy, -HALF_PI + 0.1, HALF_PI - 0.1);
+    lastMouseX = mouseX;
+    lastMouseY = mouseY;
+  }
+}
+
+function mouseReleased() {
+  isDragging = false;
+}
+
+function keyPressed() {
+  if (key === 'o' || key === 'O') showOrbits = !showOrbits;
+}
+
+function showMenu(b) {
+  menuDiv.html(`
+    <h2>${b.name}</h2>
+    <p>${b.info}</p>
+    <p><em>Distance:</em> ${b.orbitRadius}</p>
+    <p><em>Radius:</em> ${b.radius}</p>
+  `);
+  menuDiv.show();
+  closeBtn.show();
+  resetBtn.show();
+}
+
+function resetCamera() {
+  // Reset the camera parameters
+  camYaw = 0;
+  camPitch = 0;
+  camRadius = 800;
+  camCenter = createVector(0, 0, 0);
+  panFromCenter = null;
+  panToCenter = null;
+  panT = 0;
+  isPanning = false;
+  menuDiv.hide();  // Close the menu after reset
+}
+
+function windowResized() {
+  resizeCanvas(windowWidth, windowHeight);
+  pickBuffer = createGraphics(windowWidth, windowHeight, WEBGL);
+}
+
+// CelestialBody class unchanged...
+class CelestialBody {
+  constructor(name, radius, orbitRadius, speed, tex, parent, info) {
+    this.name = name;
+    this.radius = radius;
+    this.orbitRadius = orbitRadius;
+    this.speed = speed;
+    this.texture = tex;
+    this.parent = parent;
+    this.info = info;
+    this.angle = random(TWO_PI);
   }
 
-  // Funcion para generar los planetas
-  const createPlanet = (sizeX, sizeY, img, orbitalAngle, translateX, translateY, followOrbit, rotationAngle) => {
-    if (followOrbit) push();
-    rotateY(radians(orbitalAngle));
-    translate(translateX, translateY);
-    rotateY(radians(rotationAngle));  
-    texture(img);
-    sphere(sizeX, sizeY);
-    if (followOrbit) pop();
-  };
-
-  // Cambia la rotación de la cámara al arrastrar el ratón
-  function mouseDragged() {
-    const sensitivity = 0.001; // Sensibilidad del arrastre
-    camRotY = (mouseX - pmouseX) * sensitivity;
-    camRotX = (mouseY - pmouseY) * sensitivity;
-    dragging = true;
+  update() {
+    if (this.orbitRadius > 0) this.angle += this.speed * (deltaTime * 0.001);
   }
 
-
-  function resetView() {
-    if (currentView === 'sun') {
-      cam.setPosition(0, 0, 1000);
-      cam.lookAt(0, 0, 0);
-    } else if (currentView === 'earth') {
-      const earthOrbitRadius = 900;
-      const cameraDistance = 200;
-      cam.setPosition(earthOrbitRadius + cameraDistance, 100, cameraDistance);
-      cam.lookAt(earthOrbitRadius, 0, 0);
-    } else if (currentView === 'death_star') {
-      const earthOrbitRadius = 900;
-      const cameraDistance = 200;
-      cam.setPosition(earthOrbitRadius + cameraDistance, 100, cameraDistance);
-      cam.lookAt(earthOrbitRadius, 0, 0);
+  getPosition() {
+    let x = cos(this.angle) * this.orbitRadius;
+    let z = sin(this.angle) * this.orbitRadius;
+    if (this.parent) {
+      let p = this.parent.getPosition();
+      return createVector(p.x + x, p.y, p.z + z);
     }
+    return createVector(0, 0, 0);
   }
 
-
-  // Detener la cámara al soltar el ratón
-  function mouseReleased() {
-    dragging = false;
-    camRotX = 0;
-    camRotY = 0;
-  }
-
-  function drawOrbit(radius) {
-    noFill();
-    stroke(110); 
-    strokeWeight(0.5);
-    beginShape();
-    for (let angle = 0; angle < 360; angle += 5) {
-      let x = cos(radians(angle)) * radius;
-      let z = sin(radians(angle)) * radius;
-      vertex(x, 0, z);
-    }
-    endShape(CLOSE);
-  }
-
-
-  function changeSpeed(multiplier) {
-    speedMultiplier = multiplier;
-    document.querySelectorAll('.speed-btn').forEach(btn => {
-      btn.classList.remove('active');
-    });
-    document.getElementById(`speed${multiplier}x`).classList.add('active');
-  }
-
-
-  function drawPlanetName(name, x, y, z) { // De momento no funciona
+  display() {
     push();
-    resetMatrix();
-    // Usamos una cámara ortográfica para superponer el texto
-    ortho();
-    fill(255);
-    textAlign(CENTER, CENTER);
-    textSize(30);
-    // Convertimos las coordenadas de la escena 3D a 2D (se asume que (width/2, height/2) es el centro)
-    text(name, screenPos.x, screenPos.y - 50);
+    let pos = this.getPosition();
+    translate(pos.x, pos.y, pos.z);
+    // Sun
+    if (!this.parent) {
+      push();
+      noLights();
+      noStroke();
+      texture(this.texture);
+      sphere(this.radius, 24, 24);
+      pop();
+    }
+    // Planet or moon
+    else {
+      ambientMaterial(80);
+      noStroke();
+      texture(this.texture);
+      sphere(this.radius, 24, 24);
+    }
     pop();
   }
-  
+}
