@@ -3,26 +3,115 @@ let starBackground;
 let bodies = [];
 let selectedBody = null;
 
-// Camera orbit params
 let camYaw = 0, camPitch = 0, camRadius = 800;
-// Camera center and panning
 let camCenter, panFromCenter, panToCenter;
 let panT = 0, panDuration = 1000, isPanning = false;
 
-// Mouse drag
 let isDragging = false, lastMouseX = 0, lastMouseY = 0;
 const dragSensitivity = 0.01;
 
-// Orbit toggle
 let showOrbits = true;
+let speedValue = 0.2;
+let zoomValue = 800;
 
-// Picking buffer
-let pickBuffer;
-
-// Sidebar menu
 let menuDiv;
-let closeBtn;
-let resetBtn;
+let toggleMenuBtn;
+let menuVisible = true;
+
+let targetZoom = zoomValue;
+
+const realInfo = {
+  Sun: {
+    type: 'Star',
+    radiusKm: 696340,
+    distanceKm: 0,
+    orbitalPeriod: '—',
+    rotationPeriod: '25-36 days',
+    temperature: '5,778 K',
+    fact: 'Contains 99.86% of the Solar System’s mass.'
+  },
+  Mercury: {
+    type: 'Planet',
+    radiusKm: 2439.7,
+    distanceKm: 57.9,
+    orbitalPeriod: '88 days',
+    rotationPeriod: '58.6 days',
+    temperature: '167°C',
+    fact: 'Has no atmosphere to retain heat.'
+  },
+  Venus: {
+    type: 'Planet',
+    radiusKm: 6051.8,
+    distanceKm: 108.2,
+    orbitalPeriod: '225 days',
+    rotationPeriod: '243 days (retrograde)',
+    temperature: '464°C',
+    fact: 'Hottest planet due to greenhouse effect.'
+  },
+  Earth: {
+    type: 'Planet',
+    radiusKm: 6371,
+    distanceKm: 149.6,
+    orbitalPeriod: '365.25 days',
+    rotationPeriod: '24 hours',
+    temperature: '15°C',
+    fact: 'Only planet known to support life.'
+  },
+  Moon: {
+    type: 'Moon',
+    radiusKm: 1737.4,
+    distanceKm: 0.384,
+    orbitalPeriod: '27.3 days',
+    rotationPeriod: '27.3 days',
+    temperature: '-53°C average',
+    fact: 'Always shows the same face to Earth.'
+  },
+  Mars: {
+    type: 'Planet',
+    radiusKm: 3389.5,
+    distanceKm: 227.9,
+    orbitalPeriod: '687 days',
+    rotationPeriod: '24.6 hours',
+    temperature: '-63°C',
+    fact: 'Home to the tallest volcano in the solar system.'
+  },
+  Jupiter: {
+    type: 'Planet',
+    radiusKm: 69911,
+    distanceKm: 778.5,
+    orbitalPeriod: '12 years',
+    rotationPeriod: '9.9 hours',
+    temperature: '-108°C',
+    fact: 'Has a storm (the Great Red Spot) lasting centuries.'
+  },
+  Saturn: {
+    type: 'Planet',
+    radiusKm: 58232,
+    distanceKm: 1_434,
+    orbitalPeriod: '29 years',
+    rotationPeriod: '10.7 hours',
+    temperature: '-139°C',
+    fact: 'Least dense planet; would float in water.'
+  },
+  Uranus: {
+    type: 'Planet',
+    radiusKm: 25362,
+    distanceKm: 2_871,
+    orbitalPeriod: '84 years',
+    rotationPeriod: '17.2 hours (retrograde)',
+    temperature: '-195°C',
+    fact: 'Rotates on its side.'
+  },
+  Neptune: {
+    type: 'Planet',
+    radiusKm: 24622,
+    distanceKm: 4_495,
+    orbitalPeriod: '165 years',
+    rotationPeriod: '16.1 hours',
+    temperature: '-200°C',
+    fact: 'Has the fastest winds in the solar system.'
+  }
+};
 
 function preload() {
   const names = ['Sun', 'Mercury', 'Venus', 'Earth', 'Moon', 'Mars', 'Jupiter', 'Saturn', 'Uranus', 'Neptune'];
@@ -34,14 +123,8 @@ function preload() {
 
 function setup() {
   createCanvas(windowWidth, windowHeight, WEBGL);
-
-  // Initialize camera center at origin
   camCenter = createVector(0, 0, 0);
 
-  // Picking buffer
-  pickBuffer = createGraphics(windowWidth, windowHeight, WEBGL);
-
-  // Create bodies
   bodies.push(new CelestialBody('Sun', 50, 0, 0, textures['Sun'], null, 'The Sun is the star at the center.'));
   const planetData = [
     ['Mercury', 5, 80, 0.02, 'Closest to Sun.'],
@@ -62,69 +145,149 @@ function setup() {
     }
   });
 
-  // Sidebar menu
-  menuDiv = createDiv('').id('menuDiv')
-    .style('position', 'absolute')
-    .style('top', '50px').style('right', '0')
-    .style('width', '250px').style('max-height', '80%')
-    .style('overflow', 'auto')
-    .style('background', 'rgba(0,0,0,0.8)')
-    .style('color', '#fff').style('padding', '16px')
-    .style('font-family', 'sans-serif')
-    .hide();
+  menuDiv = createDiv().style('position', 'absolute').style('top', '50px').style('right', '10px').style('padding', '10px').style('background', '#000').style('color', '#fff').style('max-width', '200px').style('z-index', '10').style('border-radius', '5px');
 
-  // Close button
-  closeBtn = createButton('×')
-    .style('position', 'absolute').style('top', '8px').style('right', '8px')
-    .style('background', 'none').style('border', 'none').style('color', '#fff')
-    .style('font-size', '20px').mousePressed(() => {
-      menuDiv.hide();
-      resetCamera();
+  infoDiv = createDiv().style('position', 'absolute').style('top', '10px').style('left', '10px').style('padding', '10px').style('background', '#000').style('color', '#fff').style('max-width', '300px').style('z-index', '10').style('border-radius', '5px');
+
+  // Toggle menu button
+  toggleMenuBtn = createButton('☰')
+    .style('position', 'absolute')
+    .style('top', '10px').style('right', '10px')
+    .style('width', '40px').style('height', '40px')
+    .style('font-size', '24px')
+    .style('border', 'none')
+    .style('background', '#000').style('color', '#fff')
+    .style('border-radius', '5px')
+    .style('z-index', '20')
+    .mousePressed(() => {
+      menuVisible = !menuVisible;
+      if (menuVisible) menuDiv.show();
+      else menuDiv.hide();
     });
+
+  // Speed control buttons
+  let speedDisplay = createDiv()
+    .parent(menuDiv)
+    .style('margin', '10px 0')
+    .html(`Speed: ${speedValue.toFixed(3)}`);
+
+  createButton('-')
+    .parent(menuDiv)
+    .style('margin', '10px 0')
+    .mousePressed(() => {
+      speedValue = max(0.001, speedValue - 0.2);
+      speedDisplay.html(`Speed: ${speedValue.toFixed(2)}`);
+    });
+
+  createButton('+')
+    .parent(menuDiv)
+    .style('margin', '10px 0')
+    .mousePressed(() => {
+      speedValue = min(200, speedValue + 0.2);
+      speedDisplay.html(`Speed: ${speedValue.toFixed(2)}`);
+    });
+
+  // Zoom control buttons
+  let zoomDisplay = createDiv()
+    .parent(menuDiv)
+    .style('margin', '10px 0')
+    .html(`Zoom: ${zoomValue}`);
+
+  // Zoom control buttons
+  createButton('-')
+    .parent(menuDiv)
+    .style('margin', '10px 0')
+    .mousePressed(() => {
+      targetZoom = max(100, targetZoom - 50); // Change target zoom
+      zoomDisplay.html(`Zoom: ${targetZoom}`);
+    });
+
+  createButton('+')
+    .parent(menuDiv)
+    .style('margin', '10px 0')
+    .mousePressed(() => {
+      targetZoom += 50; // Change target zoom
+      zoomDisplay.html(`Zoom: ${targetZoom}`);
+    });
+
+
+  // Toggle orbit visibility
+  createButton('Toggle Orbits (O)')
+    .parent(menuDiv)
+    .style('margin', '10px 0')
+    .style('display', 'block')
+    .mousePressed(() => {
+      showOrbits = !showOrbits;
+    });
+
+  // Add Reset Button for Zoom and Speed
+  createButton('Reset')
+    .parent(menuDiv)
+    .style('margin', '10px 0')
+    .mousePressed(() => {
+      resetCamera();
+      speedValue = 0.2;
+      zoomValue = 800;
+      speedDisplay.html(`Speed: ${speedValue.toFixed(1)}`);
+      zoomDisplay.html(`Zoom: ${zoomValue}`);
+    });
+
+
+
+
+  // Existing planet buttons
+  bodies.forEach(body => {
+    createButton(body.name)
+      .parent(menuDiv)
+      .style('display', 'block')
+      .style('margin', '4px 0')
+      .style('width', '100%')
+      .style('background', '#333')
+      .style('color', '#fff')
+      .style('border', 'none')
+      .style('padding', '6px')
+      .style('text-align', 'left')
+      .mousePressed(() => {
+        panFromCenter = camCenter.copy();
+        panToCenter = body.getPosition();
+        panT = 0;
+        isPanning = true;
+        selectedBody = body;
+        showInfo(body);
+      });
+  });
 }
 
 function draw() {
   background(0);
 
-  // 1) Update panning
-  if (isPanning) {
-    panT += deltaTime;
-    let t = min(panT / panDuration, 1);
-    // ease-out cubic
-    let e = (--t) * t * t + 1;
-    camCenter = p5.Vector.lerp(panFromCenter, panToCenter, e);
-    if (panT >= panDuration) isPanning = false;
-  }
+  // Smooth zoom transition
+  camRadius = lerp(camRadius, targetZoom, 0.05); // Adjust the third parameter for smoother or faster zoom
 
-  // Compute camera position
+  // Update camera speed
   let camX = camCenter.x + camRadius * cos(camYaw) * cos(camPitch);
   let camY = camCenter.y + camRadius * sin(camPitch);
   let camZ = camCenter.z + camRadius * sin(camYaw) * cos(camPitch);
-
-  // 2) Render picking buffer
-  pickBuffer.push();
-  pickBuffer.clear();
-  pickBuffer.camera(camX, camY, camZ, camCenter.x, camCenter.y, camCenter.z, 0, 1, 0);
-
-  // Render celestial bodies for picking
-  bodies.forEach((b, i) => {
-    pickBuffer.push();
-    let pos = b.getPosition();
-    pickBuffer.translate(pos.x, pos.y, pos.z);
-    pickBuffer.noStroke();
-    pickBuffer.fill(i + 1, 0, 0);  // Assign a unique ID based on the index
-    pickBuffer.sphere(b.radius, 24, 24);
-    pickBuffer.pop();
-  });
-
-  pickBuffer.pop();
-
-  // 3) Main scene rendering
-  pointLight(255, 255, 200, 0, 0, 0);
-  ambientLight(30);
   camera(camX, camY, camZ, camCenter.x, camCenter.y, camCenter.z, 0, 1, 0);
 
-  // Starfield
+  // Planetary motion and panning speed
+  bodies.forEach(b => b.update(speedValue)); // Pass speedValue to control planet speed
+
+  if (isPanning) {
+    panT += deltaTime;
+    let t = min(panT / panDuration, 1);
+    let e = (--t) * t * t + 1;
+    camCenter = p5.Vector.lerp(panFromCenter, panToCenter, e);
+    if (panT >= panDuration) isPanning = false;
+  } else if (selectedBody) {
+    camCenter = selectedBody.getPosition().copy();
+  }
+
+  
+  pointLight(255, 255, 200, 0, 0, 0);
+  ambientLight(30);
+
+  // Draw background stars
   push();
   noLights();
   noStroke();
@@ -137,6 +300,8 @@ function draw() {
 
   bodies.forEach(b => { b.update(); b.display(); });
 }
+
+
 
 function drawOrbits() {
   push();
@@ -161,25 +326,7 @@ function mousePressed() {
   isDragging = true;
   lastMouseX = mouseX;
   lastMouseY = mouseY;
-
-  // Pick
-  let pix = pickBuffer.get(mouseX, mouseY);
-  let id = pix[0];
-
-  console.log("pix: ", pix);
-  console.log("id: ", id);
-
-  if (id > 0 && id <= bodies.length) {
-    // start pan
-    panFromCenter = camCenter.copy();
-    panToCenter = bodies[id - 1].getPosition();
-    panT = 0;
-    isPanning = true;
-    selectedBody = bodies[id - 1];
-    showMenu(selectedBody);
-  }
 }
-
 
 function mouseDragged() {
   if (isDragging && !isPanning) {
@@ -198,39 +345,43 @@ function mouseReleased() {
 
 function keyPressed() {
   if (key === 'o' || key === 'O') showOrbits = !showOrbits;
+  if (key === ' ') { // Espacio para deseleccionar
+    selectedBody = null;
+  }
 }
 
-function showMenu(b) {
-  menuDiv.html(`
+function showInfo(b) {
+  const d = realInfo[b.name];
+  if (!d) return;
+
+  const html = `
     <h2>${b.name}</h2>
-    <p>${b.info}</p>
-    <p><em>Distance:</em> ${b.orbitRadius}</p>
-    <p><em>Radius:</em> ${b.radius}</p>
-  `);
-  menuDiv.show();
-  closeBtn.show();
-  resetBtn.show();
+    <p><strong>Type:</strong> ${d.type}</p>
+    <p><strong>Radius:</strong> ${d.radiusKm.toLocaleString()} km</p>
+    <p><strong>Distance from ${b.parent ? b.parent.name : 'Sun'}:</strong> ${d.distanceKm.toLocaleString()} million km</p>
+    <p><strong>Orbital Period:</strong> ${d.orbitalPeriod}</p>
+    <p><strong>Rotation Period:</strong> ${d.rotationPeriod}</p>
+    <p><strong>Temperature:</strong> ${d.temperature}</p>
+    <p><em>${d.fact}</em></p>
+  `;
+
+  infoDiv.html(html);
 }
+
 
 function resetCamera() {
-  // Reset the camera parameters
   camYaw = 0;
   camPitch = 0;
   camRadius = 800;
   camCenter = createVector(0, 0, 0);
-  panFromCenter = null;
-  panToCenter = null;
-  panT = 0;
   isPanning = false;
-  menuDiv.hide();  // Close the menu after reset
+  targetZoom = 800; // Reset target zoom
 }
+
 
 function windowResized() {
   resizeCanvas(windowWidth, windowHeight);
-  pickBuffer = createGraphics(windowWidth, windowHeight, WEBGL);
 }
-
-// CelestialBody class unchanged...
 class CelestialBody {
   constructor(name, radius, orbitRadius, speed, tex, parent, info) {
     this.name = name;
@@ -243,8 +394,11 @@ class CelestialBody {
     this.angle = random(TWO_PI);
   }
 
-  update() {
-    if (this.orbitRadius > 0) this.angle += this.speed * (deltaTime * 0.001);
+  update(customSpeed) {
+    // Use customSpeed (e.g., speedValue) to modify the orbital movement
+    if (this.orbitRadius > 0) {
+      this.angle += (customSpeed || this.speed) * (deltaTime * 0.001);
+    }
   }
 
   getPosition() {
@@ -261,7 +415,6 @@ class CelestialBody {
     push();
     let pos = this.getPosition();
     translate(pos.x, pos.y, pos.z);
-    // Sun
     if (!this.parent) {
       push();
       noLights();
@@ -269,9 +422,7 @@ class CelestialBody {
       texture(this.texture);
       sphere(this.radius, 24, 24);
       pop();
-    }
-    // Planet or moon
-    else {
+    } else {
       ambientMaterial(80);
       noStroke();
       texture(this.texture);
