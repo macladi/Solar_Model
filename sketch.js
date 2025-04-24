@@ -3,9 +3,9 @@ let starBackground;
 let bodies = [];
 let selectedBody = null;
 
-let camYaw = 0, camPitch = 0, camRadius = 800;
+let camYaw = 0, camPitch = 75, camRadius = 800;
 let camCenter, panFromCenter, panToCenter;
-let panT = 0, panDuration = 1000, isPanning = false;
+let panT = 0, panDuration = 500, isPanning = false;
 
 let isDragging = false, lastMouseX = 0, lastMouseY = 0;
 const dragSensitivity = 0.01;
@@ -17,6 +17,7 @@ let zoomValue = 800;
 let menuDiv;
 let toggleMenuBtn;
 let menuVisible = true;
+let infoVisible = false;
 
 let targetZoom = zoomValue;
 
@@ -125,6 +126,144 @@ function setup() {
   createCanvas(windowWidth, windowHeight, WEBGL);
   camCenter = createVector(0, 0, 0);
 
+  styleTag = createElement('style', `
+    .card {
+      width: 200px;
+      background-color: rgba(36, 40, 50, 0.5);
+      background-image: linear-gradient(139deg, rgba(36,40,50,0.5) 0%, rgba(37,28,40,0.5) 100%);
+      border-radius: 10px;
+      padding: 15px 0;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+
+      /* oculto por defecto */
+      visibility: hidden;
+      opacity: 0;
+      transform: scale(0.9);
+      transition: visibility 0s 0.3s, opacity 0.3s ease-out, transform 0.3s ease-out;
+    }
+
+    .card.show {
+      /* cuando tiene .show, aparece */
+      visibility: visible;
+      opacity: 1;
+      transform: scale(1);
+      transition-delay: 0s;
+    }
+    .card .separator {
+      border-top: 1.5px solid #42434a;
+      margin: 0 10px;
+    }
+    .card .list {
+      list-style: none;
+      padding: 0 10px;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .card .element {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: #eee;
+      gap: 10px;
+      transition: all .3s ease-out;
+      padding: 4px 7px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .card .element .label {
+      text-align: center;
+      font-weight: 600;
+    }
+    .card .element:hover {
+      background-color: #5353ff;
+      color: #fff;
+      transform: translate(1px, -1px);
+    }
+    .info-card {
+      width: 240px;
+      background: rgb(32,119,254)
+      border-radius: 10px;
+      padding: 15px;
+      color: #ececec;
+      font-family: sans-serif;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .info-header {
+      margin: 0;
+      font-size: 1.4em;
+      text-align: center;
+    }
+    .info-grid {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 6px 10px;
+    }
+    .info-row {
+      display: contents;
+    }
+    .info-icon {
+      font-size: 1.2em;
+      line-height: 1;
+    }
+    .info-text {
+      font-weight: 500;
+    }
+    .info-fact {
+      margin: 8px 0 0 0;
+      font-style: italic;
+      border-left: 3px solid #5353ff;
+      padding-left: 8px;
+    }
+    .btn-donate {
+      --clr-font-main: hsla(0 0% 20% / 100);
+      --btn-bg-1: hsla(194 100% 69% / 1);
+      --btn-bg-2: hsla(217 100% 56% / 1);
+      --btn-bg-color: hsla(360 100% 100% / 1);
+      --radii: 0.5em;
+      cursor: pointer;
+      min-width: 200px;
+      min-height: auto;
+      font-size: var(--size, 1.2rem);
+      font-weight: 1000;
+      transition: 0.8s;
+      background-size: 280% auto;
+      background-image: linear-gradient(
+        325deg,
+        var(--btn-bg-2) 0%,
+        var(--btn-bg-1) 55%,
+        var(--btn-bg-2) 90%
+      );
+      border: none;
+      border-radius: var(--radii);
+      color: var(--btn-bg-color);
+      box-shadow:
+        0px 0px 20px rgba(71, 184, 255, 0.5),
+        0px 5px 5px -1px rgba(58, 125, 233, 0.25),
+        inset 4px 4px 8px rgba(175, 230, 255, 0.5),
+        inset -4px -4px 8px rgba(19, 95, 216, 0.35);
+    }
+
+    .btn-donate:hover {
+      background-position: right top;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .btn-donate {
+        transition: linear;
+      }
+    }
+  `);
+  styleTag.parent(document.head);
+
   bodies.push(new CelestialBody('Sun', 50, 0, 0, textures['Sun'], null, 'The Sun is the star at the center.'));
   const planetData = [
     ['Mercury', 5, 80, 0.02, 'Closest to Sun.'],
@@ -144,117 +283,85 @@ function setup() {
       bodies.push(new CelestialBody('Moon', 4, 20, 0.03 * 1.5, textures['Moon'], pl, 'Orbits Earth.'));
     }
   });
+  menuDiv = createDiv().addClass('card show')   // arranca abierto
+    .style('position', 'absolute').style('top', '50px').style('right', '10px');
+  infoDiv = createDiv().addClass('card')        // arranca cerrado
+    .style('position', 'absolute').style('top', '10px').style('left', '10px');
 
-  menuDiv = createDiv().style('position', 'absolute').style('top', '50px').style('right', '10px').style('padding', '10px').style('background', '#000').style('color', '#fff').style('max-width', '200px').style('z-index', '10').style('border-radius', '5px');
-
-  infoDiv = createDiv().style('position', 'absolute').style('top', '10px').style('left', '10px').style('padding', '10px').style('background', '#000').style('color', '#fff').style('max-width', '300px').style('z-index', '10').style('border-radius', '5px');
-
-  // Toggle menu button
   toggleMenuBtn = createButton('☰')
+    .addClass('btn-donate')
     .style('position', 'absolute')
-    .style('top', '10px').style('right', '10px')
-    .style('width', '40px').style('height', '40px')
-    .style('font-size', '24px')
-    .style('border', 'none')
-    .style('background', '#000').style('color', '#fff')
-    .style('border-radius', '5px')
-    .style('z-index', '20')
+    .style('top', '10px')
+    .style('right', '10px')
     .mousePressed(() => {
       menuVisible = !menuVisible;
-      if (menuVisible) menuDiv.show();
-      else menuDiv.hide();
+      if (menuVisible) menuDiv.addClass('show');
+      else menuDiv.removeClass('show');
     });
 
-  // Speed control buttons
-  let speedDisplay = createDiv()
-    .parent(menuDiv)
-    .style('margin', '10px 0')
-    .html(`Speed: ${speedValue.toFixed(3)}`);
+  // LISTA DE CONTROLES
+  let controlList = createElement('ul').addClass('list').parent(menuDiv);
 
-  createButton('-')
-    .parent(menuDiv)
-    .style('margin', '10px 0')
+  // -- Velocidad --
+  let liSpeed = createElement('li').addClass('element').parent(controlList);
+  createElement('span', '-').addClass('label').parent(liSpeed)
     .mousePressed(() => {
-      speedValue = max(0.001, speedValue - 0.2);
-      speedDisplay.html(`Speed: ${speedValue.toFixed(2)}`);
+      speedValue = max(0.001, speedValue - 0.1);
+      select('#speedDisp').html(`SPEED: ${speedValue.toFixed(2)}`);
     });
-
-  createButton('+')
-    .parent(menuDiv)
-    .style('margin', '10px 0')
+  createElement('span', `SPEED: ${speedValue.toFixed(2)}`)
+    .addClass('label').id('speedDisp').parent(liSpeed);
+  createElement('span', '+').addClass('label').parent(liSpeed)
     .mousePressed(() => {
-      speedValue = min(200, speedValue + 0.2);
-      speedDisplay.html(`Speed: ${speedValue.toFixed(2)}`);
+      speedValue = min(10, speedValue + 0.1);
+      select('#speedDisp').html(`SPEED: ${speedValue.toFixed(2)}`);
     });
 
-  // Zoom control buttons
-  let zoomDisplay = createDiv()
-    .parent(menuDiv)
-    .style('margin', '10px 0')
-    .html(`Zoom: ${zoomValue}`);
-
-  // Zoom control buttons
-  createButton('-')
-    .parent(menuDiv)
-    .style('margin', '10px 0')
+  // -- Zoom --
+  let liZoom = createElement('li').addClass('element').parent(controlList);
+  createElement('span', '-').addClass('label').parent(liZoom)
     .mousePressed(() => {
-      targetZoom = max(100, targetZoom - 50); // Change target zoom
-      zoomDisplay.html(`Zoom: ${targetZoom}`);
+      targetZoom = min(2000, targetZoom + 50);
+      zoomValue = targetZoom;
     });
-
-  createButton('+')
-    .parent(menuDiv)
-    .style('margin', '10px 0')
+  createElement('span', `ZOOM`)
+    .addClass('label').id('zoomDisp').parent(liZoom);
+  createElement('span', '+').addClass('label').parent(liZoom)
     .mousePressed(() => {
-      targetZoom += 50; // Change target zoom
-      zoomDisplay.html(`Zoom: ${targetZoom}`);
+      targetZoom = max(150, targetZoom - 50);
+      zoomValue = targetZoom;
     });
 
+  // -- Toggle órbitas --
+  let liOrbit = createElement('li', 'Toggle Orbits (O)')
+    .addClass('element').style('justify-content', 'center').parent(controlList);
+  liOrbit.mousePressed(() => showOrbits = !showOrbits);
 
-  // Toggle orbit visibility
-  createButton('Toggle Orbits (O)')
-    .parent(menuDiv)
-    .style('margin', '10px 0')
-    .style('display', 'block')
-    .mousePressed(() => {
-      showOrbits = !showOrbits;
+  // -- Reset --
+  let liReset = createElement('li', 'Reset (Space)')
+    .addClass('element').style('justify-content', 'center').parent(controlList);
+  liReset.mousePressed(() => {
+    resetCamera();
+    speedValue = 0.2; zoomValue = targetZoom = 800;
+    select('#speedDisp').html(`SPEED: ${speedValue.toFixed(2)}`);
+    select('#zoomDisp').html(`ZOOM`);
+  });
+
+  // Separador
+  createElement('div').addClass('separator').parent(menuDiv);
+
+  // LISTA DE PLANETAS
+  let planetList = createElement('ul').addClass('list').parent(menuDiv);
+  bodies.forEach(b => {
+    let li = createElement('li').addClass('element').parent(planetList).mousePressed(() => {
+      console.log(b);
+      panFromCenter = camCenter.copy();
+      panToCenter = b.getPosition();
+      panT = 0; isPanning = true;
+      selectedBody = b; showInfo(b);
     });
+    createElement('span', b.name).addClass('label').style('width', '100%').parent(li)
 
-  // Add Reset Button for Zoom and Speed
-  createButton('Reset')
-    .parent(menuDiv)
-    .style('margin', '10px 0')
-    .mousePressed(() => {
-      resetCamera();
-      speedValue = 0.2;
-      zoomValue = 800;
-      speedDisplay.html(`Speed: ${speedValue.toFixed(1)}`);
-      zoomDisplay.html(`Zoom: ${zoomValue}`);
-    });
-
-
-
-
-  // Existing planet buttons
-  bodies.forEach(body => {
-    createButton(body.name)
-      .parent(menuDiv)
-      .style('display', 'block')
-      .style('margin', '4px 0')
-      .style('width', '100%')
-      .style('background', '#333')
-      .style('color', '#fff')
-      .style('border', 'none')
-      .style('padding', '6px')
-      .style('text-align', 'left')
-      .mousePressed(() => {
-        panFromCenter = camCenter.copy();
-        panToCenter = body.getPosition();
-        panT = 0;
-        isPanning = true;
-        selectedBody = body;
-        showInfo(body);
-      });
   });
 }
 
@@ -283,7 +390,7 @@ function draw() {
     camCenter = selectedBody.getPosition().copy();
   }
 
-  
+
   pointLight(255, 255, 200, 0, 0, 0);
   ambientLight(30);
 
@@ -346,37 +453,75 @@ function mouseReleased() {
 function keyPressed() {
   if (key === 'o' || key === 'O') showOrbits = !showOrbits;
   if (key === ' ') { // Espacio para deseleccionar
-    selectedBody = null;
+    resetCamera()
+    infoDiv.removeClass('show');
   }
 }
 
 function showInfo(b) {
   const d = realInfo[b.name];
+  console.log(d);
   if (!d) return;
 
-  const html = `
-    <h2>${b.name}</h2>
-    <p><strong>Type:</strong> ${d.type}</p>
-    <p><strong>Radius:</strong> ${d.radiusKm.toLocaleString()} km</p>
-    <p><strong>Distance from ${b.parent ? b.parent.name : 'Sun'}:</strong> ${d.distanceKm.toLocaleString()} million km</p>
-    <p><strong>Orbital Period:</strong> ${d.orbitalPeriod}</p>
-    <p><strong>Rotation Period:</strong> ${d.rotationPeriod}</p>
-    <p><strong>Temperature:</strong> ${d.temperature}</p>
-    <p><em>${d.fact}</em></p>
-  `;
+  // Vacía primero el contenido anterior
+  infoDiv.html('');
+  // Asegúrate de que tenga la clase base de tarjeta
+  infoDiv.addClass('info-card');
 
-  infoDiv.html(html);
+  // Título
+  createElement('h2', b.name)
+    .addClass('info-header')
+    .parent(infoDiv);
+
+  // Lista en grid
+  const grid = createElement('ul')
+    .addClass('info-grid')
+    .parent(infoDiv);
+
+  // Helper para crear cada fila con icono y texto
+  const addRow = (icon, label, value) => {
+    const li = createElement('li').addClass('info-row').parent(grid);
+    createElement('span', icon).addClass('info-icon').parent(li);
+    createElement('span', `${label}: ${value}`).addClass('info-text').parent(li);
+  };
+
+  addRow('🔭', 'Type', d.type);
+  addRow('📏', 'Radius', `${d.radiusKm.toLocaleString()} km`);
+  addRow('🌌', 'Dist. from ' + (b.parent ? b.parent.name : 'Sun'),
+    `${d.distanceKm.toLocaleString()} million km`);
+  addRow('⏳', 'Orbital Period', d.orbitalPeriod);
+  addRow('🔄', 'Rotation Period', d.rotationPeriod);
+  addRow('🌡️', 'Temperature', d.temperature);
+
+  // Hecho curioso
+  createElement('p', d.fact)
+    .addClass('info-fact')
+    .parent(infoDiv);
+
+  // Finalmente hazlo visible
+  infoDiv.addClass('show');
 }
 
 
 function resetCamera() {
+  // Reset de ángulos y zoom
   camYaw = 0;
-  camPitch = 0;
-  camRadius = 800;
-  camCenter = createVector(0, 0, 0);
+  camPitch = -0.4; // o el pitch que quieras por defecto
+  targetZoom = 800;
+  camRadius = targetZoom;
+
+  // Centro de cámara en el Sol
+  const sun = bodies[0];
+  camCenter = sun.getPosition().copy();
+
+  // Si quieres que al dibujar se quede pegado al Sol:
+  selectedBody = sun;
   isPanning = false;
-  targetZoom = 800; // Reset target zoom
+
+  // Ocultar info
+  infoDiv.removeClass('show');
 }
+
 
 
 function windowResized() {
